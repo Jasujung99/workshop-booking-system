@@ -1,33 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/workshop_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/common/loading_widget.dart';
-import '../../widgets/common/error_widget.dart';
 import '../../widgets/layout/responsive_layout.dart';
 import '../../theme/app_theme.dart';
-import '../../../domain/entities/workshop.dart';
-import 'workshop_detail_screen.dart';
-import 'workshop_filter_screen.dart';
+import '../../../main_fixed.dart';
 
 /// Workshop list screen with search and filtering capabilities
 /// 
 /// Displays a list of workshops with infinite scroll, search functionality,
 /// and filtering options. Supports both mobile and desktop layouts.
-class WorkshopListScreen extends StatefulWidget {
+class WorkshopListScreenFixed extends StatefulWidget {
   final bool showSearchBar;
   
-  const WorkshopListScreen({
+  const WorkshopListScreenFixed({
     super.key,
     this.showSearchBar = false,
   });
 
   @override
-  State<WorkshopListScreen> createState() => _WorkshopListScreenState();
+  State<WorkshopListScreenFixed> createState() => _WorkshopListScreenFixedState();
 }
 
-class _WorkshopListScreenState extends State<WorkshopListScreen> {
+class _WorkshopListScreenFixedState extends State<WorkshopListScreenFixed> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   bool _showSearch = false;
@@ -36,7 +31,6 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
   void initState() {
     super.initState();
     _showSearch = widget.showSearchBar;
-    _setupScrollListener();
     _loadInitialData();
   }
 
@@ -47,21 +41,10 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
     super.dispose();
   }
 
-  /// Setup scroll listener for infinite scroll
-  void _setupScrollListener() {
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= 
-          _scrollController.position.maxScrollExtent - 200) {
-        // Load more when near bottom
-        context.read<WorkshopProvider>().loadMoreWorkshops();
-      }
-    });
-  }
-
   /// Load initial workshop data
   void _loadInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<WorkshopProvider>().loadWorkshops(refresh: true);
+      context.read<MockWorkshopProvider>().loadWorkshops(refresh: true);
     });
   }
 
@@ -80,7 +63,6 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
       body: Column(
         children: [
           if (_showSearch) _buildSearchBar(),
-          _buildFilterChips(),
           Expanded(child: _buildWorkshopList()),
         ],
       ),
@@ -170,20 +152,10 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
           ),
         IconButton(
           icon: const Icon(Icons.filter_list),
-          onPressed: _showFilterDialog,
-        ),
-        Consumer<WorkshopProvider>(
-          builder: (context, provider, child) {
-            if (provider.currentFilter.hasFilters) {
-              return IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  provider.clearFilters();
-                },
-                tooltip: '필터 초기화',
-              );
-            }
-            return const SizedBox.shrink();
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('필터 기능은 향후 구현 예정입니다')),
+            );
           },
         ),
       ],
@@ -204,7 +176,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
-                    context.read<WorkshopProvider>().searchWorkshops('');
+                    setState(() {});
                   },
                 )
               : null,
@@ -213,86 +185,9 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
           ),
         ),
         onChanged: (query) {
-          // Debounce search
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (_searchController.text == query) {
-              context.read<WorkshopProvider>().searchWorkshops(query);
-            }
-          });
-        },
-        onSubmitted: (query) {
-          context.read<WorkshopProvider>().searchWorkshops(query);
+          setState(() {});
         },
       ),
-    );
-  }
-
-  /// Build filter chips for mobile
-  Widget _buildFilterChips() {
-    return Consumer<WorkshopProvider>(
-      builder: (context, provider, child) {
-        final filter = provider.currentFilter;
-        final chips = <Widget>[];
-
-        if (filter.searchQuery != null && filter.searchQuery!.isNotEmpty) {
-          chips.add(_buildFilterChip(
-            label: '검색: ${filter.searchQuery}',
-            onDeleted: () {
-              _searchController.clear();
-              provider.searchWorkshops('');
-            },
-          ));
-        }
-
-        if (filter.minPrice != null || filter.maxPrice != null) {
-          final priceText = _getPriceRangeText(filter.minPrice, filter.maxPrice);
-          chips.add(_buildFilterChip(
-            label: '가격: $priceText',
-            onDeleted: () {
-              final newFilter = filter.copyWith(
-                minPrice: null,
-                maxPrice: null,
-              );
-              provider.applyFilter(newFilter);
-            },
-          ));
-        }
-
-        if (filter.tags != null && filter.tags!.isNotEmpty) {
-          for (final tag in filter.tags!) {
-            chips.add(_buildFilterChip(
-              label: '#$tag',
-              onDeleted: () {
-                final newTags = List<String>.from(filter.tags!)..remove(tag);
-                final newFilter = filter.copyWith(tags: newTags.isEmpty ? null : newTags);
-                provider.applyFilter(newFilter);
-              },
-            ));
-          }
-        }
-
-        if (chips.isEmpty) return const SizedBox.shrink();
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
-          child: Wrap(
-            spacing: AppTheme.spacingSm,
-            children: chips,
-          ),
-        );
-      },
-    );
-  }
-
-  /// Build filter chip
-  Widget _buildFilterChip({
-    required String label,
-    required VoidCallback onDeleted,
-  }) {
-    return Chip(
-      label: Text(label),
-      onDeleted: onDeleted,
-      deleteIcon: const Icon(Icons.close, size: 18),
     );
   }
 
@@ -301,7 +196,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
     return Expanded(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.spacingMd),
-        child: Consumer<WorkshopProvider>(
+        child: Consumer<MockWorkshopProvider>(
           builder: (context, provider, child) {
             final availableTags = provider.getAvailableTags();
             final priceRange = provider.getPriceRange();
@@ -326,7 +221,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
                     ),
                   ),
                   const SizedBox(height: AppTheme.spacingMd),
-                  _buildPriceRangeFilter(priceRange.min, priceRange.max),
+                  Text('₩${priceRange.min.toInt()} - ₩${priceRange.max.toInt()}'),
                   const SizedBox(height: AppTheme.spacingLg),
                 ],
                 
@@ -339,22 +234,20 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
                     ),
                   ),
                   const SizedBox(height: AppTheme.spacingMd),
-                  _buildTagsFilter(availableTags),
-                  const SizedBox(height: AppTheme.spacingLg),
-                ],
-                
-                // Clear filters button
-                if (provider.currentFilter.hasFilters)
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        provider.clearFilters();
-                        _searchController.clear();
+                  Wrap(
+                    spacing: AppTheme.spacingSm,
+                    runSpacing: AppTheme.spacingSm,
+                    children: availableTags.map((tag) => FilterChip(
+                      label: Text(tag),
+                      selected: false,
+                      onSelected: (selected) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('$tag 필터 선택됨')),
+                        );
                       },
-                      child: const Text('모든 필터 초기화'),
-                    ),
+                    )).toList(),
                   ),
+                ],
               ],
             );
           },
@@ -363,95 +256,12 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
     );
   }
 
-  /// Build price range filter
-  Widget _buildPriceRangeFilter(double minPrice, double maxPrice) {
-    return Consumer<WorkshopProvider>(
-      builder: (context, provider, child) {
-        final filter = provider.currentFilter;
-        final currentMin = filter.minPrice ?? minPrice;
-        final currentMax = filter.maxPrice ?? maxPrice;
-        
-        return Column(
-          children: [
-            RangeSlider(
-              values: RangeValues(currentMin, currentMax),
-              min: minPrice,
-              max: maxPrice,
-              divisions: 20,
-              labels: RangeLabels(
-                '${currentMin.toInt()}원',
-                '${currentMax.toInt()}원',
-              ),
-              onChanged: (values) {
-                final newFilter = filter.copyWith(
-                  minPrice: values.start,
-                  maxPrice: values.end,
-                );
-                provider.applyFilter(newFilter);
-              },
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('${currentMin.toInt()}원'),
-                Text('${currentMax.toInt()}원'),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Build tags filter
-  Widget _buildTagsFilter(List<String> availableTags) {
-    return Consumer<WorkshopProvider>(
-      builder: (context, provider, child) {
-        final selectedTags = provider.currentFilter.tags ?? [];
-        
-        return Wrap(
-          spacing: AppTheme.spacingSm,
-          runSpacing: AppTheme.spacingSm,
-          children: availableTags.map((tag) {
-            final isSelected = selectedTags.contains(tag);
-            return FilterChip(
-              label: Text(tag),
-              selected: isSelected,
-              onSelected: (selected) {
-                final newTags = List<String>.from(selectedTags);
-                if (selected) {
-                  newTags.add(tag);
-                } else {
-                  newTags.remove(tag);
-                }
-                
-                final newFilter = provider.currentFilter.copyWith(
-                  tags: newTags.isEmpty ? null : newTags,
-                );
-                provider.applyFilter(newFilter);
-              },
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
   /// Build workshop list
   Widget _buildWorkshopList() {
-    return Consumer<WorkshopProvider>(
+    return Consumer<MockWorkshopProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading && provider.workshops.isEmpty) {
           return const Center(child: LoadingWidget());
-        }
-
-        if (provider.errorMessage != null && provider.workshops.isEmpty) {
-          return Center(
-            child: AppErrorWidget(
-              message: provider.errorMessage!,
-              onRetry: () => provider.loadWorkshops(refresh: true),
-            ),
-          );
         }
 
         if (provider.isEmpty) {
@@ -483,22 +293,22 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
           );
         }
 
+        // Filter workshops based on search
+        final filteredWorkshops = provider.workshops.where((workshop) {
+          if (_searchController.text.isEmpty) return true;
+          final query = _searchController.text.toLowerCase();
+          return workshop.title.toLowerCase().contains(query) ||
+                 workshop.description.toLowerCase().contains(query);
+        }).toList();
+
         return RefreshIndicator(
           onRefresh: () => provider.refreshWorkshops(),
           child: ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.all(AppTheme.spacingMd),
-            itemCount: provider.workshops.length + (provider.hasMoreData ? 1 : 0),
+            itemCount: filteredWorkshops.length,
             itemBuilder: (context, index) {
-              if (index == provider.workshops.length) {
-                // Loading indicator for pagination
-                return const Padding(
-                  padding: EdgeInsets.all(AppTheme.spacingMd),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              final workshop = provider.workshops[index];
+              final workshop = filteredWorkshops[index];
               return _buildWorkshopCard(workshop);
             },
           ),
@@ -508,7 +318,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
   }
 
   /// Build workshop card
-  Widget _buildWorkshopCard(Workshop workshop) {
+  Widget _buildWorkshopCard(MockWorkshop workshop) {
     return Card(
       margin: const EdgeInsets.only(bottom: AppTheme.spacingMd),
       child: InkWell(
@@ -527,18 +337,13 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
                   color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: workshop.imageUrl != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          workshop.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildImagePlaceholder();
-                          },
-                        ),
-                      )
-                    : _buildImagePlaceholder(),
+                child: Center(
+                  child: Icon(
+                    Icons.business_center,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
               const SizedBox(height: AppTheme.spacingMd),
               
@@ -617,26 +422,14 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
     );
   }
 
-  /// Build image placeholder
-  Widget _buildImagePlaceholder() {
-    return Center(
-      child: Icon(
-        Icons.business_center,
-        size: 48,
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-      ),
-    );
-  }
-
   /// Build floating action button for admin users
   Widget? _buildFloatingActionButton() {
-    return Consumer<AuthProvider>(
+    return Consumer<MockAuthProvider>(
       builder: (context, authProvider, child) {
         if (!authProvider.isAdmin) return const SizedBox.shrink();
         
         return FloatingActionButton(
           onPressed: () {
-            // TODO: Navigate to create workshop screen
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('워크샵 생성 기능은 향후 구현 예정입니다'),
@@ -649,33 +442,16 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
     );
   }
 
-  /// Show filter dialog for mobile
-  void _showFilterDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => const WorkshopFilterScreen(),
-    );
-  }
-
   /// Navigate to workshop detail
-  void _navigateToWorkshopDetail(Workshop workshop) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => WorkshopDetailScreen(workshop: workshop),
+  void _navigateToWorkshopDetail(MockWorkshop workshop) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${workshop.title} 상세 화면으로 이동'),
+        action: SnackBarAction(
+          label: '확인',
+          onPressed: () {},
+        ),
       ),
     );
-  }
-
-  /// Get price range text
-  String _getPriceRangeText(double? minPrice, double? maxPrice) {
-    if (minPrice != null && maxPrice != null) {
-      return '${minPrice.toInt()}원 - ${maxPrice.toInt()}원';
-    } else if (minPrice != null) {
-      return '${minPrice.toInt()}원 이상';
-    } else if (maxPrice != null) {
-      return '${maxPrice.toInt()}원 이하';
-    }
-    return '';
   }
 }

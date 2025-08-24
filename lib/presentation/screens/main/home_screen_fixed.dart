@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/auth_provider.dart';
-import '../../providers/workshop_provider.dart';
-import '../../providers/booking_provider.dart';
 import '../../widgets/common/loading_widget.dart';
-import '../../widgets/common/error_widget.dart';
 import '../../widgets/layout/responsive_layout.dart';
 import '../../theme/app_theme.dart';
-import '../workshop/workshop_list_screen.dart';
+import '../workshop/workshop_list_screen_fixed.dart';
 import '../booking/booking_list_screen.dart';
-import '../../../domain/entities/booking.dart';
+import '../../../main_fixed.dart';
 
 /// Home screen for regular users
 /// 
 /// Displays welcome message, quick stats, featured workshops,
 /// and quick action buttons for main app features
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreenFixed extends StatefulWidget {
+  const HomeScreenFixed({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreenFixed> createState() => _HomeScreenFixedState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenFixedState extends State<HomeScreenFixed> {
   @override
   void initState() {
     super.initState();
@@ -33,17 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Load initial data for home screen
   void _loadInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final workshopProvider = context.read<WorkshopProvider>();
-      final bookingProvider = context.read<BookingProvider>();
+      final workshopProvider = context.read<MockWorkshopProvider>();
+      final bookingProvider = context.read<MockBookingProvider>();
       
       // Load featured workshops (first few)
       workshopProvider.loadWorkshops(refresh: true);
       
       // Load user's recent bookings
-      final user = context.read<AuthProvider>().currentUser;
-      if (user != null) {
-        bookingProvider.loadBookings(user.id);
-      }
+      bookingProvider.loadBookings('mock_user_id');
     });
   }
 
@@ -192,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build app bar
   Widget _buildAppBar() {
-    return Consumer<AuthProvider>(
+    return Consumer<MockAuthProvider>(
       builder: (context, authProvider, child) {
         return SliverAppBar(
           expandedHeight: 120,
@@ -214,16 +207,17 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: const Icon(Icons.notifications_outlined),
               onPressed: () {
-                // TODO: Navigate to notifications
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('알림 기능은 향후 구현 예정입니다')),
+                );
               },
             ),
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () {
-                // Navigate to workshop search
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const WorkshopListScreen(showSearchBar: true),
+                    builder: (context) => const WorkshopListScreenFixed(showSearchBar: true),
                   ),
                 );
               },
@@ -236,9 +230,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build welcome section
   Widget _buildWelcomeSection() {
-    return Consumer<AuthProvider>(
+    return Consumer<MockAuthProvider>(
       builder: (context, authProvider, child) {
-        final user = authProvider.currentUser;
         final timeOfDay = _getTimeOfDay();
         
         return Card(
@@ -248,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$timeOfDay, ${user?.name ?? '사용자'}님!',
+                  '$timeOfDay, ${authProvider.userName ?? '사용자'}님!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -292,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => const WorkshopListScreen(showSearchBar: true),
+                          builder: (context) => const WorkshopListScreenFixed(showSearchBar: true),
                         ),
                       );
                     },
@@ -361,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build quick stats section
   Widget _buildQuickStats() {
-    return Consumer2<WorkshopProvider, BookingProvider>(
+    return Consumer2<MockWorkshopProvider, MockBookingProvider>(
       builder: (context, workshopProvider, bookingProvider, child) {
         return Card(
           child: Padding(
@@ -382,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _buildStatItem(
                         icon: Icons.business_center,
                         label: '전체 워크샵',
-                        value: '${workshopProvider.allWorkshops.length}',
+                        value: '${workshopProvider.workshops.length}',
                       ),
                     ),
                     Expanded(
@@ -435,25 +428,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build featured workshops section
   Widget _buildFeaturedWorkshops() {
-    return Consumer<WorkshopProvider>(
+    return Consumer<MockWorkshopProvider>(
       builder: (context, workshopProvider, child) {
         if (workshopProvider.isLoading) {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(AppTheme.spacingLg),
               child: LoadingWidget(),
-            ),
-          );
-        }
-
-        if (workshopProvider.errorMessage != null) {
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingLg),
-              child: AppErrorWidget(
-                message: workshopProvider.errorMessage!,
-                onRetry: () => workshopProvider.loadWorkshops(refresh: true),
-              ),
             ),
           );
         }
@@ -479,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => const WorkshopListScreen(),
+                            builder: (context) => const WorkshopListScreenFixed(),
                           ),
                         );
                       },
@@ -517,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        '₩${workshop.price.toStringAsFixed(0)}',
+                        workshop.formattedPrice,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -525,7 +506,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
-                        // TODO: Navigate to workshop detail
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${workshop.title} 상세 화면으로 이동')),
+                        );
                       },
                     ),
                   )),
@@ -539,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Build recent bookings section
   Widget _buildRecentBookings() {
-    return Consumer<BookingProvider>(
+    return Consumer<MockBookingProvider>(
       builder: (context, bookingProvider, child) {
         if (bookingProvider.isLoading) {
           return const Card(
@@ -604,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       title: Text(
-                        booking.itemId ?? '워크샵',
+                        booking.workshopTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -620,7 +603,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       onTap: () {
-                        // TODO: Navigate to booking detail
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${booking.workshopTitle} 예약 상세 화면으로 이동')),
+                        );
                       },
                     ),
                   )),
@@ -645,49 +630,49 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Get booking status color
-  Color _getBookingStatusColor(BookingStatus status) {
+  Color _getBookingStatusColor(MockBookingStatus status) {
     switch (status) {
-      case BookingStatus.confirmed:
+      case MockBookingStatus.confirmed:
         return Colors.green;
-      case BookingStatus.pending:
+      case MockBookingStatus.pending:
         return Colors.orange;
-      case BookingStatus.cancelled:
+      case MockBookingStatus.cancelled:
         return Colors.red;
-      case BookingStatus.completed:
+      case MockBookingStatus.completed:
         return Colors.blue;
-      case BookingStatus.noShow:
+      case MockBookingStatus.noShow:
         return Colors.grey;
     }
   }
 
   /// Get booking status icon
-  IconData _getBookingStatusIcon(BookingStatus status) {
+  IconData _getBookingStatusIcon(MockBookingStatus status) {
     switch (status) {
-      case BookingStatus.confirmed:
+      case MockBookingStatus.confirmed:
         return Icons.check_circle;
-      case BookingStatus.pending:
+      case MockBookingStatus.pending:
         return Icons.schedule;
-      case BookingStatus.cancelled:
+      case MockBookingStatus.cancelled:
         return Icons.cancel;
-      case BookingStatus.completed:
+      case MockBookingStatus.completed:
         return Icons.done_all;
-      case BookingStatus.noShow:
+      case MockBookingStatus.noShow:
         return Icons.person_off;
     }
   }
 
   /// Get booking status text
-  String _getBookingStatusText(BookingStatus status) {
+  String _getBookingStatusText(MockBookingStatus status) {
     switch (status) {
-      case BookingStatus.confirmed:
+      case MockBookingStatus.confirmed:
         return '확정';
-      case BookingStatus.pending:
+      case MockBookingStatus.pending:
         return '대기';
-      case BookingStatus.cancelled:
+      case MockBookingStatus.cancelled:
         return '취소';
-      case BookingStatus.completed:
+      case MockBookingStatus.completed:
         return '완료';
-      case BookingStatus.noShow:
+      case MockBookingStatus.noShow:
         return '노쇼';
     }
   }
@@ -710,13 +695,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Refresh all data
   Future<void> _refreshData() async {
-    final workshopProvider = context.read<WorkshopProvider>();
-    final bookingProvider = context.read<BookingProvider>();
+    final workshopProvider = context.read<MockWorkshopProvider>();
+    final bookingProvider = context.read<MockBookingProvider>();
     
-    final user = context.read<AuthProvider>().currentUser;
     await Future.wait([
       workshopProvider.refreshWorkshops(),
-      if (user != null) bookingProvider.loadBookings(user.id),
+      bookingProvider.loadBookings('mock_user_id'),
     ]);
   }
 }

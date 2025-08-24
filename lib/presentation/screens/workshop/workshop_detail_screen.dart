@@ -7,7 +7,9 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/error_widget.dart';
 import '../../widgets/layout/responsive_layout.dart';
+import '../../widgets/review/review_summary_widget.dart';
 import '../../theme/app_theme.dart';
+import '../booking/time_slot_selection_screen.dart';
 
 /// Workshop detail screen with booking functionality
 /// 
@@ -116,6 +118,11 @@ class _WorkshopDetailScreenState extends State<WorkshopDetailScreen> {
                 children: [
                   _buildWorkshopInfo(),
                   const SizedBox(height: AppTheme.spacingLg),
+                  ReviewSummaryWidget(
+                    workshopId: widget.workshop.id,
+                    workshopTitle: widget.workshop.title,
+                  ),
+                  const SizedBox(height: AppTheme.spacingLg),
                   _buildTimeSlotSection(),
                 ],
               ),
@@ -140,7 +147,16 @@ class _WorkshopDetailScreenState extends State<WorkshopDetailScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: _buildWorkshopInfo(),
+                    child: Column(
+                      children: [
+                        _buildWorkshopInfo(),
+                        const SizedBox(height: AppTheme.spacingLg),
+                        ReviewSummaryWidget(
+                          workshopId: widget.workshop.id,
+                          workshopTitle: widget.workshop.title,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: AppTheme.spacingLg),
                   Expanded(
@@ -170,7 +186,16 @@ class _WorkshopDetailScreenState extends State<WorkshopDetailScreen> {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: _buildWorkshopInfo(),
+                    child: Column(
+                      children: [
+                        _buildWorkshopInfo(),
+                        const SizedBox(height: AppTheme.spacingLg),
+                        ReviewSummaryWidget(
+                          workshopId: widget.workshop.id,
+                          workshopTitle: widget.workshop.title,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: AppTheme.spacingXl),
                   Expanded(
@@ -627,11 +652,11 @@ class _WorkshopDetailScreenState extends State<WorkshopDetailScreen> {
   void _handleBooking() {
     if (_selectedTimeSlot == null) return;
     
-    // TODO: Navigate to booking confirmation screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${_formatDate(_selectedTimeSlot!.date)} ${_formatTime(_selectedTimeSlot!.startTime)} 예약이 선택되었습니다',
+    // Navigate to time slot selection screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TimeSlotSelectionScreen(
+          workshop: widget.workshop,
         ),
       ),
     );

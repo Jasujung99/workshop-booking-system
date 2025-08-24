@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/config/firebase_config.dart';
 import 'presentation/theme/app_theme.dart';
 import 'core/utils/logger.dart';
-import 'firebase_options.dart';
+
 import 'presentation/navigation/app_router.dart';
 import 'core/di/service_locator.dart';
 

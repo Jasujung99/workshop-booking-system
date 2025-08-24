@@ -7,9 +7,12 @@ import '../../data/services/firebase_storage_service.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/workshop_repository_impl.dart';
 import '../../data/repositories/booking_repository_impl.dart';
+import '../../data/repositories/review_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/workshop_repository.dart';
 import '../../domain/repositories/booking_repository.dart';
+import '../../domain/repositories/review_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/usecases/auth/sign_in_use_case.dart';
 import '../../domain/usecases/auth/sign_up_use_case.dart';
 import '../../domain/usecases/auth/sign_out_use_case.dart';
@@ -19,9 +22,13 @@ import '../../domain/usecases/workshop/update_workshop_use_case.dart';
 import '../../domain/usecases/booking/get_bookings_use_case.dart';
 import '../../domain/usecases/booking/create_booking_use_case.dart';
 import '../../domain/usecases/booking/cancel_booking_use_case.dart';
+import '../../domain/usecases/review/create_review_use_case.dart';
+import '../../domain/usecases/review/get_reviews_use_case.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/workshop_provider.dart';
 import '../../presentation/providers/booking_provider.dart';
+import '../../presentation/providers/review_provider.dart';
+import '../services/notification_service.dart';
 
 /// Service locator for dependency injection
 /// 
@@ -35,6 +42,7 @@ class ServiceLocator {
   static late AuthRepository _authRepository;
   static late WorkshopRepository _workshopRepository;
   static late BookingRepository _bookingRepository;
+  static late ReviewRepository _reviewRepository;
   
   static late SignInUseCase _signInUseCase;
   static late SignUpUseCase _signUpUseCase;
@@ -45,6 +53,10 @@ class ServiceLocator {
   static late GetBookingsUseCase _getBookingsUseCase;
   static late CreateBookingUseCase _createBookingUseCase;
   static late CancelBookingUseCase _cancelBookingUseCase;
+  static late CreateReviewUseCase _createReviewUseCase;
+  static late GetReviewsUseCase _getReviewsUseCase;
+  
+  static late NotificationService _notificationService;
 
   /// Initialize all dependencies
   static Future<void> initialize() async {
@@ -56,16 +68,18 @@ class ServiceLocator {
     // Initialize repositories
     _authRepository = AuthRepositoryImpl(
       authService: _firebaseAuthService,
-      firestoreService: _firestoreService,
     );
     
     _workshopRepository = WorkshopRepositoryImpl(
       firestoreService: _firestoreService,
-      storageService: _firebaseStorageService,
     );
     
     _bookingRepository = BookingRepositoryImpl(
       firestoreService: _firestoreService,
+    );
+    
+    _reviewRepository = ReviewRepositoryImpl(
+      FirebaseFirestore.instance,
     );
     
     // Initialize use cases
@@ -73,11 +87,17 @@ class ServiceLocator {
     _signUpUseCase = SignUpUseCase(_authRepository);
     _signOutUseCase = SignOutUseCase(_authRepository);
     _getWorkshopsUseCase = GetWorkshopsUseCase(_workshopRepository);
-    _createWorkshopUseCase = CreateWorkshopUseCase(_workshopRepository);
-    _updateWorkshopUseCase = UpdateWorkshopUseCase(_workshopRepository);
-    _getBookingsUseCase = GetBookingsUseCase(_bookingRepository);
-    _createBookingUseCase = CreateBookingUseCase(_bookingRepository);
-    _cancelBookingUseCase = CancelBookingUseCase(_bookingRepository);
+    _createWorkshopUseCase = CreateWorkshopUseCase(_workshopRepository, _authRepository);
+    _updateWorkshopUseCase = UpdateWorkshopUseCase(_workshopRepository, _authRepository);
+    _getBookingsUseCase = GetBookingsUseCase(_bookingRepository, _authRepository);
+    _createBookingUseCase = CreateBookingUseCase(_bookingRepository, _authRepository);
+    _cancelBookingUseCase = CancelBookingUseCase(_bookingRepository, _authRepository);
+    _createReviewUseCase = CreateReviewUseCase(_reviewRepository);
+    _getReviewsUseCase = GetReviewsUseCase(_reviewRepository);
+    
+    // Initialize notification service
+    _notificationService = NotificationService();
+    await _notificationService.initialize();
   }
 
   /// Get list of providers for the app
@@ -105,6 +125,17 @@ class ServiceLocator {
           createBookingUseCase: _createBookingUseCase,
           cancelBookingUseCase: _cancelBookingUseCase,
           bookingRepository: _bookingRepository,
+          notificationService: _notificationService,
+        ),
+      ),
+      ChangeNotifierProvider<NotificationService>.value(
+        value: _notificationService,
+      ),
+      ChangeNotifierProvider<ReviewProvider>(
+        create: (_) => ReviewProvider(
+          _reviewRepository,
+          _createReviewUseCase,
+          _getReviewsUseCase,
         ),
       ),
     ];
@@ -114,4 +145,5 @@ class ServiceLocator {
   static AuthRepository get authRepository => _authRepository;
   static WorkshopRepository get workshopRepository => _workshopRepository;
   static BookingRepository get bookingRepository => _bookingRepository;
+  static ReviewRepository get reviewRepository => _reviewRepository;
 }

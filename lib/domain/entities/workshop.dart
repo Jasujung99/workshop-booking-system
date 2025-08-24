@@ -144,8 +144,8 @@ class Workshop extends Equatable {
     return 'Workshop(id: $id, title: $title, price: $price, capacity: $capacity)';
   }
 }
-/// 
-Filter class for workshop queries
+
+/// Filter class for workshop queries
 class WorkshopFilter extends Equatable {
   final String? searchQuery;
   final double? minPrice;

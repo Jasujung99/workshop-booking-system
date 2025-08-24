@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/auth_provider.dart';
 import '../../widgets/layout/responsive_layout.dart';
-import '../workshop/workshop_list_screen.dart';
+import '../../widgets/notifications/notification_bell.dart';
+import '../workshop/workshop_list_screen_fixed.dart';
 import '../booking/booking_list_screen.dart';
 import '../profile/profile_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
-import 'home_screen.dart';
+import 'home_screen_fixed.dart';
+import '../../../main_fixed.dart';
 
 /// Main screen with bottom navigation for user interface
 /// 
 /// Provides navigation between different sections of the app
 /// and adapts the interface based on user role (user vs admin)
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+class MainScreenFixed extends StatefulWidget {
+  const MainScreenFixed({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  State<MainScreenFixed> createState() => _MainScreenFixedState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenFixedState extends State<MainScreenFixed> {
   int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
+    return Consumer<MockAuthProvider>(
       builder: (context, authProvider, child) {
         final isAdmin = authProvider.isAdmin;
         
@@ -137,6 +138,7 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                         ),
                       ),
+                      const NotificationBell(),
                     ],
                   ),
                 ),
@@ -186,14 +188,14 @@ class _MainScreenState extends State<MainScreen> {
     if (isAdmin) {
       return [
         const AdminDashboardScreen(),
-        const WorkshopListScreen(),
+        const WorkshopListScreenFixed(),
         const BookingListScreen(),
         const ProfileScreen(),
       ];
     } else {
       return [
-        const HomeScreen(),
-        const WorkshopListScreen(),
+        const HomeScreenFixed(),
+        const WorkshopListScreenFixed(),
         const BookingListScreen(),
         const ProfileScreen(),
       ];

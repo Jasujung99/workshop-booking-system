@@ -10,6 +10,7 @@ import '../../domain/usecases/booking/get_bookings_use_case.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../core/error/result.dart';
 import '../../core/error/exceptions.dart';
+import '../../core/services/notification_service.dart';
 
 /// Provider for managing booking state and operations
 /// 
@@ -20,6 +21,7 @@ class BookingProvider extends ChangeNotifier {
   final CancelBookingUseCase _cancelBookingUseCase;
   final GetBookingsUseCase _getBookingsUseCase;
   final BookingRepository _bookingRepository;
+  final NotificationService? _notificationService;
 
   // State variables
   List<Booking> _bookings = [];
@@ -45,13 +47,16 @@ class BookingProvider extends ChangeNotifier {
     required CancelBookingUseCase cancelBookingUseCase,
     required GetBookingsUseCase getBookingsUseCase,
     required BookingRepository bookingRepository,
+    NotificationService? notificationService,
   })  : _createBookingUseCase = createBookingUseCase,
         _cancelBookingUseCase = cancelBookingUseCase,
         _getBookingsUseCase = getBookingsUseCase,
-        _bookingRepository = bookingRepository;
+        _bookingRepository = bookingRepository,
+        _notificationService = notificationService;
 
   // Getters
   List<Booking> get bookings => _bookings;
+  List<Booking> get allBookings => _bookings;
   List<TimeSlot> get availableTimeSlots => _availableTimeSlots;
   Booking? get currentBooking => _currentBooking;
   TimeSlot? get selectedTimeSlot => _selectedTimeSlot;
@@ -92,7 +97,7 @@ class BookingProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      final result = await _getBookingsUseCase.execute(userId);
+      final result = await _getBookingsUseCase.execute(userId: userId);
       
       result.fold(
         onSuccess: (bookings) {
@@ -147,7 +152,7 @@ class BookingProvider extends ChangeNotifier {
       result.fold(
         onSuccess: (timeSlots) {
           _availableTimeSlots = timeSlots
-              .where((slot) => slot.isAvailable && slot.hasAvailableCapacity())
+              .where((slot) => slot.isAvailable && slot.hasAvailableCapacity)
               .toList();
           _setLoading(false);
         },
@@ -206,6 +211,7 @@ class BookingProvider extends ChangeNotifier {
         amount: _totalAmount,
         currency: 'KRW',
         paidAt: DateTime.now(),
+        createdAt: DateTime.now(),
       );
 
       // Process payment first
@@ -238,11 +244,18 @@ class BookingProvider extends ChangeNotifier {
         status: BookingStatus.confirmed,
         totalAmount: _totalAmount,
         paymentInfo: processedPayment,
-        specialRequests: specialRequests,
+        notes: specialRequests,
         createdAt: DateTime.now(),
       );
 
-      final result = await _createBookingUseCase.execute(booking);
+      final result = await _createBookingUseCase.execute(
+        timeSlotId: booking.timeSlotId,
+        type: booking.type,
+        itemId: booking.itemId,
+        totalAmount: booking.totalAmount,
+        paymentInfo: processedPayment,
+        notes: booking.notes,
+      );
       
       return result.fold(
         onSuccess: (createdBooking) {
@@ -250,6 +263,11 @@ class BookingProvider extends ChangeNotifier {
           _bookings.insert(0, createdBooking);
           _currentStep = BookingStep.confirmation;
           _setCreatingBooking(false);
+          
+          // Send notifications
+          _notificationService?.notifyPaymentCompleted(createdBooking);
+          _notificationService?.notifyBookingStatusChange(createdBooking, BookingStatus.pending);
+          
           return true;
         },
         onFailure: (exception) {
@@ -272,16 +290,34 @@ class BookingProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      final result = await _cancelBookingUseCase.execute(bookingId, reason);
+      final result = await _cancelBookingUseCase.execute(
+        bookingId: bookingId,
+        reason: reason,
+      );
       
       return result.fold(
         onSuccess: (cancelledBooking) {
           // Update booking in list
           final index = _bookings.indexWhere((b) => b.id == bookingId);
+          final oldBooking = index != -1 ? _bookings[index] : null;
+          
           if (index != -1) {
             _bookings[index] = cancelledBooking;
           }
           _setCancellingBooking(false);
+          
+          // Send notifications
+          if (oldBooking != null) {
+            _notificationService?.notifyBookingStatusChange(cancelledBooking, oldBooking.status);
+            
+            // Calculate and notify about refund if applicable
+            final mockSlotTime = DateTime.now().add(const Duration(days: 3));
+            final refundAmount = cancelledBooking.calculateRefundAmount(mockSlotTime);
+            if (refundAmount > 0) {
+              _notificationService?.notifyRefundProcessed(cancelledBooking, refundAmount);
+            }
+          }
+          
           return true;
         },
         onFailure: (exception) {
