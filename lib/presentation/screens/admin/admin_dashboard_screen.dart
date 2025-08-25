@@ -384,6 +384,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return '취소';
       case BookingStatus.refunded:
         return '환불';
+      case BookingStatus.noShow:
+        return '노쇼';
     }
   }
 
@@ -399,6 +401,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return Colors.red;
       case BookingStatus.refunded:
         return Colors.purple;
+      case BookingStatus.noShow:
+        return Colors.grey;
     }
   }
 

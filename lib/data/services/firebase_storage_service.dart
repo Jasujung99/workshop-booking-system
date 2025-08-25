@@ -97,7 +97,7 @@ class FirebaseStorageService {
       
       for (int i = 0; i < imageFiles.length; i++) {
         final file = imageFiles[i];
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i_${path.basename(file.path)}';
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i${path.basename(file.path)}';
         
         final result = await uploadImage(
           imageFile: file,
@@ -111,7 +111,7 @@ class FirebaseStorageService {
         if (result is Failure) {
           // If any upload fails, clean up already uploaded files
           await _cleanupUploadedFiles(uploadResults);
-          return result;
+          return Failure(UnknownException('Upload failed for file $i'));
         }
 
         uploadResults.add((result as Success<String>).data);
@@ -173,7 +173,7 @@ class FirebaseStorageService {
           final ref = _storage.refFromURL(url);
           deleteResults.add(ref.delete());
         } catch (e) {
-          AppLogger.warning('Failed to create reference for URL: $url', exception: e);
+          AppLogger.warning('Failed to create reference for URL: $url');
         }
       }
 
@@ -272,7 +272,8 @@ class FirebaseStorageService {
           compressedBytes = Uint8List.fromList(img.encodePng(resizedImage));
           break;
         case '.webp':
-          compressedBytes = Uint8List.fromList(img.encodeWebP(resizedImage, quality: quality));
+          // WebP encoding not available in this version, fallback to JPEG
+          compressedBytes = Uint8List.fromList(img.encodeJpg(resizedImage, quality: quality));
           break;
         default:
           // Default to JPEG for unknown formats
@@ -371,7 +372,7 @@ class FirebaseStorageService {
   Future<Result<String>> uploadWorkshopImage(File imageFile, String fileName) async {
     final validationResult = validateImageFile(imageFile);
     if (validationResult is Failure) {
-      return validationResult;
+      return Failure(ValidationException('Image validation failed'));
     }
 
     return await uploadImage(

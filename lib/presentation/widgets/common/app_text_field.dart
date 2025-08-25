@@ -70,7 +70,6 @@ class _AppTextFieldState extends State<AppTextField> {
   @override
   Widget build(BuildContext context) {
     final accessibilityService = AccessibilityService.instance;
-    final localizations = AppLocalizations.of(context);
     
     // Create semantic label for accessibility
     final fieldSemanticLabel = widget.semanticLabel ?? 
@@ -103,46 +102,47 @@ class _AppTextFieldState extends State<AppTextField> {
             inputFormatters: widget.inputFormatters,
             autofocus: widget.autofocus,
             decoration: InputDecoration(
-            labelText: widget.isRequired ? '${widget.label} *' : widget.label,
-            hintText: widget.hint,
-            prefixIcon: widget.prefixIcon,
-            suffixIcon: _buildSuffixIcon(),
-            helperText: widget.helperText,
-            errorText: widget.errorText,
-            counterText: widget.maxLength != null ? null : '',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline,
+              labelText: widget.isRequired ? '${widget.label} *' : widget.label,
+              hintText: widget.hint,
+              prefixIcon: widget.prefixIcon,
+              suffixIcon: _buildSuffixIcon(),
+              helperText: widget.helperText,
+              errorText: widget.errorText,
+              counterText: widget.maxLength != null ? null : '',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
               ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.error,
-                width: 2,
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.error,
+                  width: 2,
+                ),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                ),
               ),
             ),
           ),
@@ -153,7 +153,6 @@ class _AppTextFieldState extends State<AppTextField> {
 
   Widget? _buildSuffixIcon() {
     if (widget.obscureText) {
-      final localizations = AppLocalizations.of(context);
       return Semantics(
         button: true,
         label: _isObscured ? 'Show password' : 'Hide password',

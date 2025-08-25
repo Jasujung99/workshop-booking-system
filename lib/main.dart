@@ -12,6 +12,7 @@ import 'l10n/app_localizations.dart';
 
 import 'presentation/navigation/app_router.dart';
 import 'core/di/service_locator.dart';
+import 'core/services/navigation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

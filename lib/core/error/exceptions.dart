@@ -48,6 +48,10 @@ class NotFoundException extends AppException {
   const NotFoundException(super.message, {super.code});
 }
 
+class DatabaseException extends AppException {
+  const DatabaseException(super.message, {super.code});
+}
+
 class UnknownException extends AppException {
   const UnknownException(super.message, {super.code});
 }

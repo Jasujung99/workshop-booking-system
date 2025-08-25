@@ -657,6 +657,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return Colors.blue;
       case BookingStatus.noShow:
         return Colors.grey;
+      case BookingStatus.refunded:
+        return Colors.purple;
     }
   }
 
@@ -673,6 +675,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.done_all;
       case BookingStatus.noShow:
         return Icons.person_off;
+      case BookingStatus.refunded:
+        return Icons.money_off;
     }
   }
 
@@ -689,6 +693,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return '완료';
       case BookingStatus.noShow:
         return '노쇼';
+      case BookingStatus.refunded:
+        return '환불';
     }
   }
 

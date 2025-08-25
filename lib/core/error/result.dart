@@ -37,4 +37,14 @@ extension ResultExtension<T> on Result<T> {
       Failure<T> failure => onFailure(failure.exception),
     };
   }
+  
+  R when<R>({
+    required R Function(T data) success,
+    required R Function(AppException exception) failure,
+  }) {
+    return switch (this) {
+      Success<T> s => success(s.data),
+      Failure<T> f => failure(f.exception),
+    };
+  }
 }

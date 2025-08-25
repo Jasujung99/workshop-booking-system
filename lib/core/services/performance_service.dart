@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/painting.dart';
 import 'package:logger/logger.dart';
 
 /// Service for optimizing app performance

@@ -129,6 +129,8 @@ class RecentActivityWidget extends StatelessWidget {
         return '예약이 취소되었습니다';
       case BookingStatus.refunded:
         return '환불이 처리되었습니다';
+      case BookingStatus.noShow:
+        return '노쇼가 발생했습니다';
     }
   }
 
@@ -144,6 +146,8 @@ class RecentActivityWidget extends StatelessWidget {
         return Icons.cancel;
       case BookingStatus.refunded:
         return Icons.money_off;
+      case BookingStatus.noShow:
+        return Icons.person_off;
     }
   }
 
@@ -159,6 +163,8 @@ class RecentActivityWidget extends StatelessWidget {
         return Colors.red;
       case BookingStatus.refunded:
         return Colors.purple;
+      case BookingStatus.noShow:
+        return Colors.grey;
     }
   }
 

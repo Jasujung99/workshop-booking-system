@@ -12,6 +12,7 @@ enum BookingStatus {
   cancelled,
   completed,
   noShow,
+  refunded,
 }
 
 class Booking extends Equatable {
@@ -134,6 +135,8 @@ class Booking extends Equatable {
         return '이용 완료';
       case BookingStatus.noShow:
         return '노쇼';
+      case BookingStatus.refunded:
+        return '환불 완료';
     }
   }
 

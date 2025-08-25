@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
-import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:logger/logger.dart';
 
 /// Enhanced image cache manager with custom configurations
 class ImageCacheManager {
@@ -49,13 +48,10 @@ class ImageCacheManager {
   /// Get cache size information
   Future<CacheInfo> getCacheInfo() async {
     try {
-      final cacheDir = await getTemporaryDirectory();
-      final cacheSize = await _calculateDirectorySize(cacheDir);
-      
       return CacheInfo(
         memoryImageCount: PaintingBinding.instance.imageCache.currentSize,
         memoryImageSizeBytes: PaintingBinding.instance.imageCache.currentSizeBytes,
-        diskCacheSizeBytes: cacheSize,
+        diskCacheSizeBytes: 0, // Simplified for web compatibility
         maxMemoryImages: PaintingBinding.instance.imageCache.maximumSize,
         maxMemorySizeBytes: PaintingBinding.instance.imageCache.maximumSizeBytes,
       );
@@ -104,17 +100,6 @@ class ImageCacheManager {
     }
   }
 
-  /// Get cached image file
-  Future<File?> getCachedImageFile(String imageUrl) async {
-    try {
-      final fileInfo = await DefaultCacheManager().getFileFromCache(imageUrl);
-      return fileInfo?.file;
-    } catch (e) {
-      _logger.w('Failed to get cached file for $imageUrl: $e');
-      return null;
-    }
-  }
-
   /// Configure cache settings based on device capabilities
   Future<void> configureCacheForDevice() async {
     try {
@@ -135,21 +120,6 @@ class ImageCacheManager {
     } catch (e) {
       _logger.e('Failed to configure cache for device: $e');
     }
-  }
-
-  /// Calculate directory size
-  Future<int> _calculateDirectorySize(Directory directory) async {
-    int size = 0;
-    try {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File) {
-          size += await entity.length();
-        }
-      }
-    } catch (e) {
-      _logger.w('Failed to calculate directory size: $e');
-    }
-    return size;
   }
 
   /// Get device memory information (simplified)
@@ -192,26 +162,4 @@ class DeviceMemoryInfo {
   final bool isLowMemoryDevice;
 
   const DeviceMemoryInfo({required this.isLowMemoryDevice});
-}
-
-/// Custom cache manager for different image types
-class CustomCacheManager extends DefaultCacheManager {
-  static const String key = 'customImageCache';
-  
-  static CustomCacheManager? _instance;
-  
-  factory CustomCacheManager() {
-    _instance ??= CustomCacheManager._();
-    return _instance!;
-  }
-  
-  CustomCacheManager._() : super(
-    Config(
-      key,
-      stalePeriod: const Duration(days: 7), // Cache for 7 days
-      maxNrOfCacheObjects: 200, // Max 200 cached files
-      repo: JsonCacheInfoRepository(databaseName: key),
-      fileService: HttpFileService(),
-    ),
-  );
 }

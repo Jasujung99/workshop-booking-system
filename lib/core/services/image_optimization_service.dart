@@ -1,21 +1,30 @@
-import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
+
+// Conditional imports for platform-specific functionality
+import 'dart:io' if (dart.library.html) 'dart:html' as io;
+import 'package:path_provider/path_provider.dart' if (dart.library.html) 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 /// Service for optimizing and compressing images
 class ImageOptimizationService {
   static final Logger _logger = Logger();
   
   /// Compress image file with specified quality and dimensions
-  static Future<File?> compressImage(
-    File imageFile, {
+  static Future<dynamic> compressImage(
+    dynamic imageFile, {
     int quality = 85,
     int? maxWidth,
     int? maxHeight,
   }) async {
+    if (kIsWeb) {
+      // Web implementation - return original file for now
+      _logger.w('Image compression not fully supported on web, returning original');
+      return imageFile;
+    }
+    
     try {
       final tempDir = await getTemporaryDirectory();
       final fileName = path.basenameWithoutExtension(imageFile.path);
@@ -36,7 +45,7 @@ class ImageOptimizationService {
 
       if (compressedFile != null) {
         _logger.i('Image compressed successfully: ${compressedFile.path}');
-        return File(compressedFile.path);
+        return compressedFile;
       }
       
       _logger.w('Image compression failed, returning original file');
@@ -87,11 +96,17 @@ class ImageOptimizationService {
   }
 
   /// Create thumbnail from image file
-  static Future<File?> createThumbnail(
-    File imageFile, {
+  static Future<dynamic> createThumbnail(
+    dynamic imageFile, {
     int size = 200,
     int quality = 70,
   }) async {
+    if (kIsWeb) {
+      // Web implementation - return original file for now
+      _logger.w('Thumbnail creation not fully supported on web, returning original');
+      return imageFile;
+    }
+    
     try {
       final tempDir = await getTemporaryDirectory();
       final fileName = path.basenameWithoutExtension(imageFile.path);
@@ -111,7 +126,7 @@ class ImageOptimizationService {
 
       if (thumbnailFile != null) {
         _logger.i('Thumbnail created successfully: ${thumbnailFile.path}');
-        return File(thumbnailFile.path);
+        return thumbnailFile;
       }
       
       return null;

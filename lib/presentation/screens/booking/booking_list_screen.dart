@@ -363,6 +363,10 @@ class BookingCard extends StatelessWidget {
         backgroundColor = Theme.of(context).colorScheme.outline.withValues(alpha: 0.2);
         textColor = Theme.of(context).colorScheme.onSurfaceVariant;
         break;
+      case BookingStatus.refunded:
+        backgroundColor = Theme.of(context).colorScheme.surfaceVariant;
+        textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+        break;
     }
 
     return Container(

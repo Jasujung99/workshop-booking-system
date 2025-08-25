@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:logger/logger.dart';
+import 'navigation_service.dart';
 
 /// Service for managing accessibility features
 class AccessibilityService {
@@ -216,12 +218,7 @@ class AccessibilityService {
   }
 }
 
-/// Navigation service for accessibility
-class NavigationService {
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  
-  static BuildContext? get currentContext => navigatorKey.currentContext;
-}
+
 
 /// Accessibility information data class
 class AccessibilityInfo {

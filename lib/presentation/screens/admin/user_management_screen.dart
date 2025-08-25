@@ -402,6 +402,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       case BookingStatus.noShow:
         backgroundColor = Theme.of(context).colorScheme.outline.withOpacity(0.2);
         break;
+      case BookingStatus.refunded:
+        backgroundColor = Theme.of(context).colorScheme.surfaceVariant;
+        break;
     }
 
     return Chip(
@@ -600,6 +603,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         return '취소';
       case BookingStatus.noShow:
         return '노쇼';
+      case BookingStatus.refunded:
+        return '환불 완료';
     }
   }
 

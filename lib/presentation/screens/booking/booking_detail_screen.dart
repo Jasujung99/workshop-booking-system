@@ -519,6 +519,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         return Icons.cancel_outlined;
       case BookingStatus.noShow:
         return Icons.person_off_outlined;
+      case BookingStatus.refunded:
+        return Icons.money_off_outlined;
     }
   }
 
@@ -534,6 +536,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         return Theme.of(context).colorScheme.error;
       case BookingStatus.noShow:
         return Theme.of(context).colorScheme.onSurfaceVariant;
+      case BookingStatus.refunded:
+        return Theme.of(context).colorScheme.outline;
     }
   }
 

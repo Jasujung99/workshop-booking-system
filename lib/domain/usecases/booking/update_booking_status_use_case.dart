@@ -38,9 +38,11 @@ class UpdateBookingStatusUseCase {
       case BookingStatus.completed:
         return false; // Completed bookings cannot be changed
       case BookingStatus.cancelled:
-        return false; // Cancelled bookings cannot be changed
+        return [BookingStatus.refunded].contains(newStatus); // Cancelled bookings can be refunded
       case BookingStatus.noShow:
         return false; // No-show bookings cannot be changed
+      case BookingStatus.refunded:
+        return false; // Refunded bookings cannot be changed
     }
   }
 }
