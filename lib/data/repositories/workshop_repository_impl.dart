@@ -71,4 +71,24 @@ class WorkshopRepositoryImpl implements WorkshopRepository {
   Future<Result<List<Workshop>>> searchWorkshops(String query) async {
     return await _firestoreService.getWorkshops(searchQuery: query);
   }
+
+  @override
+  Future<Result<List<Workshop>>> getPopularWorkshops({int limit = 5}) async {
+    // Get all workshops and sort by popularity metrics
+    final result = await _firestoreService.getWorkshops();
+    
+    return result.when(
+      success: (workshops) {
+        // Sort by a combination of factors that indicate popularity
+        // For now, we'll use creation date as a proxy (newer workshops first)
+        // In a real implementation, you might track booking counts, ratings, etc.
+        final sortedWorkshops = workshops.toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        
+        final popularWorkshops = sortedWorkshops.take(limit).toList();
+        return Success(popularWorkshops);
+      },
+      failure: (exception) => Failure(exception),
+    );
+  }
 }

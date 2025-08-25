@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_theme.dart';
+import '../../../core/services/accessibility_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class AppTextField extends StatefulWidget {
   final String label;
@@ -23,6 +25,8 @@ class AppTextField extends StatefulWidget {
   final String? helperText;
   final String? errorText;
   final bool autofocus;
+  final bool isRequired;
+  final String? semanticLabel;
 
   const AppTextField({
     required this.label,
@@ -45,6 +49,8 @@ class AppTextField extends StatefulWidget {
     this.helperText,
     this.errorText,
     this.autofocus = false,
+    this.isRequired = false,
+    this.semanticLabel,
     super.key,
   });
 
@@ -63,26 +69,41 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final accessibilityService = AccessibilityService.instance;
+    final localizations = AppLocalizations.of(context);
+    
+    // Create semantic label for accessibility
+    final fieldSemanticLabel = widget.semanticLabel ?? 
+        accessibilityService.createFormFieldSemanticLabel(
+          fieldName: widget.label,
+          isRequired: widget.isRequired,
+          hint: widget.hint,
+          error: widget.errorText,
+        );
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextFormField(
-          controller: widget.controller,
-          validator: widget.validator,
-          obscureText: widget.obscureText && _isObscured,
-          keyboardType: widget.keyboardType,
-          textInputAction: widget.textInputAction,
-          onEditingComplete: widget.onEditingComplete,
-          onChanged: widget.onChanged,
-          onFieldSubmitted: widget.onSubmitted,
-          enabled: widget.enabled,
-          readOnly: widget.readOnly,
-          maxLines: widget.maxLines,
-          maxLength: widget.maxLength,
-          inputFormatters: widget.inputFormatters,
-          autofocus: widget.autofocus,
-          decoration: InputDecoration(
-            labelText: widget.label,
+        Semantics(
+          label: fieldSemanticLabel,
+          textField: true,
+          child: TextFormField(
+            controller: widget.controller,
+            validator: widget.validator,
+            obscureText: widget.obscureText && _isObscured,
+            keyboardType: widget.keyboardType,
+            textInputAction: widget.textInputAction,
+            onEditingComplete: widget.onEditingComplete,
+            onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onSubmitted,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            maxLines: widget.maxLines,
+            maxLength: widget.maxLength,
+            inputFormatters: widget.inputFormatters,
+            autofocus: widget.autofocus,
+            decoration: InputDecoration(
+            labelText: widget.isRequired ? '${widget.label} *' : widget.label,
             hintText: widget.hint,
             prefixIcon: widget.prefixIcon,
             suffixIcon: _buildSuffixIcon(),
@@ -132,16 +153,22 @@ class _AppTextFieldState extends State<AppTextField> {
 
   Widget? _buildSuffixIcon() {
     if (widget.obscureText) {
-      return IconButton(
-        icon: Icon(
-          _isObscured ? Icons.visibility : Icons.visibility_off,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+      final localizations = AppLocalizations.of(context);
+      return Semantics(
+        button: true,
+        label: _isObscured ? 'Show password' : 'Hide password',
+        child: IconButton(
+          icon: Icon(
+            _isObscured ? Icons.visibility : Icons.visibility_off,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          onPressed: () {
+            setState(() {
+              _isObscured = !_isObscured;
+            });
+          },
+          tooltip: _isObscured ? 'Show password' : 'Hide password',
         ),
-        onPressed: () {
-          setState(() {
-            _isObscured = !_isObscured;
-          });
-        },
       );
     }
     return widget.suffixIcon;

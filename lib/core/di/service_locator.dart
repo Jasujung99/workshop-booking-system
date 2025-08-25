@@ -22,12 +22,25 @@ import '../../domain/usecases/workshop/update_workshop_use_case.dart';
 import '../../domain/usecases/booking/get_bookings_use_case.dart';
 import '../../domain/usecases/booking/create_booking_use_case.dart';
 import '../../domain/usecases/booking/cancel_booking_use_case.dart';
+import '../../domain/usecases/booking/get_available_time_slots_use_case.dart';
+import '../../domain/usecases/time_slot/create_time_slot_use_case.dart';
+import '../../domain/usecases/time_slot/update_time_slot_use_case.dart';
+import '../../domain/usecases/time_slot/delete_time_slot_use_case.dart';
+import '../../domain/usecases/time_slot/get_time_slots_use_case.dart';
+import '../../domain/usecases/time_slot/create_bulk_time_slots_use_case.dart';
 import '../../domain/usecases/review/create_review_use_case.dart';
 import '../../domain/usecases/review/get_reviews_use_case.dart';
+import '../../domain/usecases/user/get_all_users_use_case.dart';
+import '../../domain/usecases/user/get_user_bookings_use_case.dart';
+import '../../domain/usecases/booking/update_booking_status_use_case.dart';
+import '../../domain/usecases/booking/process_refund_use_case.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/workshop_provider.dart';
 import '../../presentation/providers/booking_provider.dart';
+import '../../presentation/providers/time_slot_provider.dart';
 import '../../presentation/providers/review_provider.dart';
+import '../../presentation/providers/admin_dashboard_provider.dart';
+import '../../presentation/providers/user_management_provider.dart';
 import '../services/notification_service.dart';
 
 /// Service locator for dependency injection
@@ -53,8 +66,18 @@ class ServiceLocator {
   static late GetBookingsUseCase _getBookingsUseCase;
   static late CreateBookingUseCase _createBookingUseCase;
   static late CancelBookingUseCase _cancelBookingUseCase;
+  static late GetAvailableTimeSlotsUseCase _getAvailableTimeSlotsUseCase;
+  static late CreateTimeSlotUseCase _createTimeSlotUseCase;
+  static late UpdateTimeSlotUseCase _updateTimeSlotUseCase;
+  static late DeleteTimeSlotUseCase _deleteTimeSlotUseCase;
+  static late GetTimeSlotsUseCase _getTimeSlotsUseCase;
+  static late CreateBulkTimeSlotsUseCase _createBulkTimeSlotsUseCase;
   static late CreateReviewUseCase _createReviewUseCase;
   static late GetReviewsUseCase _getReviewsUseCase;
+  static late GetAllUsersUseCase _getAllUsersUseCase;
+  static late GetUserBookingsUseCase _getUserBookingsUseCase;
+  static late UpdateBookingStatusUseCase _updateBookingStatusUseCase;
+  static late ProcessRefundUseCase _processRefundUseCase;
   
   static late NotificationService _notificationService;
 
@@ -92,8 +115,18 @@ class ServiceLocator {
     _getBookingsUseCase = GetBookingsUseCase(_bookingRepository, _authRepository);
     _createBookingUseCase = CreateBookingUseCase(_bookingRepository, _authRepository);
     _cancelBookingUseCase = CancelBookingUseCase(_bookingRepository, _authRepository);
+    _getAvailableTimeSlotsUseCase = GetAvailableTimeSlotsUseCase(_bookingRepository);
+    _createTimeSlotUseCase = CreateTimeSlotUseCase(_bookingRepository);
+    _updateTimeSlotUseCase = UpdateTimeSlotUseCase(_bookingRepository);
+    _deleteTimeSlotUseCase = DeleteTimeSlotUseCase(_bookingRepository);
+    _getTimeSlotsUseCase = GetTimeSlotsUseCase(_bookingRepository);
+    _createBulkTimeSlotsUseCase = CreateBulkTimeSlotsUseCase(_bookingRepository);
     _createReviewUseCase = CreateReviewUseCase(_reviewRepository);
     _getReviewsUseCase = GetReviewsUseCase(_reviewRepository);
+    _getAllUsersUseCase = GetAllUsersUseCase(_authRepository);
+    _getUserBookingsUseCase = GetUserBookingsUseCase(_bookingRepository);
+    _updateBookingStatusUseCase = UpdateBookingStatusUseCase(_bookingRepository);
+    _processRefundUseCase = ProcessRefundUseCase(_bookingRepository);
     
     // Initialize notification service
     _notificationService = NotificationService();
@@ -117,6 +150,7 @@ class ServiceLocator {
           createWorkshopUseCase: _createWorkshopUseCase,
           updateWorkshopUseCase: _updateWorkshopUseCase,
           workshopRepository: _workshopRepository,
+          storageService: _firebaseStorageService,
         ),
       ),
       ChangeNotifierProvider<BookingProvider>(
@@ -136,6 +170,31 @@ class ServiceLocator {
           _reviewRepository,
           _createReviewUseCase,
           _getReviewsUseCase,
+        ),
+      ),
+      ChangeNotifierProvider<TimeSlotProvider>(
+        create: (_) => TimeSlotProvider(
+          createTimeSlotUseCase: _createTimeSlotUseCase,
+          updateTimeSlotUseCase: _updateTimeSlotUseCase,
+          deleteTimeSlotUseCase: _deleteTimeSlotUseCase,
+          getTimeSlotsUseCase: _getTimeSlotsUseCase,
+          createBulkTimeSlotsUseCase: _createBulkTimeSlotsUseCase,
+          getWorkshopsUseCase: _getWorkshopsUseCase,
+        ),
+      ),
+      ChangeNotifierProvider<AdminDashboardProvider>(
+        create: (_) => AdminDashboardProvider(
+          bookingRepository: _bookingRepository,
+          workshopRepository: _workshopRepository,
+        ),
+      ),
+      ChangeNotifierProvider<UserManagementProvider>(
+        create: (_) => UserManagementProvider(
+          getAllUsersUseCase: _getAllUsersUseCase,
+          getUserBookingsUseCase: _getUserBookingsUseCase,
+          updateBookingStatusUseCase: _updateBookingStatusUseCase,
+          processRefundUseCase: _processRefundUseCase,
+          authRepository: _authRepository,
         ),
       ),
     ];

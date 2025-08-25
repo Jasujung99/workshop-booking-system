@@ -212,6 +212,58 @@ class FirebaseAuthService {
     }
   }
 
+  Future<Result<List<domain.User>>> getAllUsers() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection(AppConstants.usersCollection)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final users = querySnapshot.docs.map((doc) {
+        final userDto = UserDto.fromFirestore(doc);
+        return userDto.toDomain(doc.id);
+      }).toList();
+
+      AppLogger.info('Retrieved ${users.length} users');
+      return Success(users);
+    } catch (e) {
+      AppLogger.error('Error getting all users', exception: e);
+      return Failure(UnknownException('Failed to get users: ${e.toString()}'));
+    }
+  }
+
+  Future<Result<domain.User>> updateUserRole(String userId, domain.UserRole role) async {
+    try {
+      // Update user role in Firestore
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .update({
+        'role': role.name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Get updated user data
+      final userDoc = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .get();
+
+      if (!userDoc.exists) {
+        return const Failure(AuthException('User not found'));
+      }
+
+      final userDto = UserDto.fromFirestore(userDoc);
+      final updatedUser = userDto.toDomain(userId);
+
+      AppLogger.info('User role updated successfully: $userId -> ${role.name}');
+      return Success(updatedUser);
+    } catch (e) {
+      AppLogger.error('Error updating user role', exception: e);
+      return Failure(UnknownException('Failed to update user role: ${e.toString()}'));
+    }
+  }
+
 
 
   String _mapFirebaseAuthError(firebase_auth.FirebaseAuthException e) {

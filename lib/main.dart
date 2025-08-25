@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/config/firebase_config.dart';
 import 'presentation/theme/app_theme.dart';
 import 'core/utils/logger.dart';
+import 'core/services/performance_service.dart';
+import 'core/services/network_optimization_service.dart';
+import 'core/services/image_cache_manager.dart';
+import 'core/services/accessibility_service.dart';
+import 'l10n/app_localizations.dart';
 
 import 'presentation/navigation/app_router.dart';
 import 'core/di/service_locator.dart';
@@ -11,8 +17,21 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
+    // Initialize Firebase
     await FirebaseConfig.initialize();
+    
+    // Initialize performance services
+    await PerformanceService.instance.initialize();
+    await NetworkOptimizationService.instance.initialize();
+    await ImageCacheManager.instance.initialize();
+    await AccessibilityService.instance.initialize();
+    
+    // Initialize service locator
     await ServiceLocator.initialize();
+    
+    // Start performance monitoring in debug mode
+    PerformanceService.instance.startPerformanceMonitoring();
+    
     runApp(const WorkshopBookingApp());
   } catch (e, stackTrace) {
     AppLogger.error('Failed to initialize app', exception: e, stackTrace: stackTrace);
@@ -34,6 +53,32 @@ class WorkshopBookingApp extends StatelessWidget {
         themeMode: ThemeMode.system,
         home: const AppRouter(),
         debugShowCheckedModeBanner: false,
+        
+        // Localization support
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        
+        // Navigation key for accessibility
+        navigatorKey: NavigationService.navigatorKey,
+        
+        // Accessibility settings
+        builder: (context, child) {
+          final accessibilityService = AccessibilityService.instance;
+          final mediaQuery = MediaQuery.of(context);
+          
+          // Apply accessibility enhancements
+          return MediaQuery(
+            data: mediaQuery.copyWith(
+              textScaleFactor: accessibilityService.getTextScaleFactor(context),
+            ),
+            child: child!,
+          );
+        },
       ),
     );
   }

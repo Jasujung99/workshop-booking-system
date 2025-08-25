@@ -7,6 +7,7 @@ import '../../core/error/exceptions.dart';
 import '../../core/error/result.dart';
 import '../../core/utils/logger.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/image_optimization_service.dart';
 
 class FirebaseStorageService {
   final FirebaseStorage _storage;
@@ -29,19 +30,19 @@ class FirebaseStorageService {
       final finalFileName = fileName ?? 
           '${DateTime.now().millisecondsSinceEpoch}_${path.basename(imageFile.path)}';
       
-      // Compress image
-      final compressedImageResult = await _compressImage(
+      // Use enhanced image optimization service
+      final compressedFile = await ImageOptimizationService.compressImage(
         imageFile,
+        quality: quality,
         maxWidth: maxWidth,
         maxHeight: maxHeight,
-        quality: quality,
       );
 
-      if (compressedImageResult is Failure) {
-        return compressedImageResult;
+      if (compressedFile == null) {
+        return const Failure(ValidationException('Image compression failed'));
       }
 
-      final compressedImageData = (compressedImageResult as Success<Uint8List>).data;
+      final compressedImageData = await compressedFile.readAsBytes();
       
       // Create storage reference
       final storageRef = _storage.ref().child('$storagePath/$finalFileName');
@@ -364,6 +365,28 @@ class FirebaseStorageService {
     final extension = path.extension(originalFileName);
     final nameWithoutExtension = path.basenameWithoutExtension(originalFileName);
     return '${nameWithoutExtension}_$timestamp$extension';
+  }
+
+  /// Upload workshop image
+  Future<Result<String>> uploadWorkshopImage(File imageFile, String fileName) async {
+    final validationResult = validateImageFile(imageFile);
+    if (validationResult is Failure) {
+      return validationResult;
+    }
+
+    return await uploadImage(
+      imageFile: imageFile,
+      storagePath: AppConstants.workshopImagesPath,
+      fileName: fileName,
+      maxWidth: 1200,
+      maxHeight: 800,
+      quality: 85,
+    );
+  }
+
+  /// Delete workshop image
+  Future<Result<void>> deleteWorkshopImage(String imageUrl) async {
+    return await deleteImage(imageUrl);
   }
 
   /// Utility method to validate image file

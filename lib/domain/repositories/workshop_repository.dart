@@ -26,4 +26,7 @@ abstract class WorkshopRepository {
   
   /// Search workshops
   Future<Result<List<Workshop>>> searchWorkshops(String query);
+  
+  /// Get popular workshops
+  Future<Result<List<Workshop>>> getPopularWorkshops({int limit = 5});
 }

@@ -42,4 +42,13 @@ abstract class BookingRepository {
   
   /// Process refund
   Future<Result<PaymentInfo>> processRefund(String paymentId, double amount);
+  
+  /// Get bookings by date range
+  Future<Result<List<Booking>>> getBookingsByDateRange(DateTime startDate, DateTime endDate);
+  
+  /// Get recent bookings
+  Future<Result<List<Booking>>> getRecentBookings({int limit = 10});
+  
+  /// Get all bookings (admin only)
+  Future<Result<List<Booking>>> getAllBookings();
 }

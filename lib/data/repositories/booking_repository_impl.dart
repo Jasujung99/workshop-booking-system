@@ -191,4 +191,26 @@ class BookingRepositoryImpl implements BookingRepository {
       return Failure(PaymentException('Refund processing failed: ${e.toString()}'));
     }
   }
+
+  @override
+  Future<Result<List<Booking>>> getBookingsByDateRange(DateTime startDate, DateTime endDate) async {
+    return await _firestoreService.getBookings(
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  @override
+  Future<Result<List<Booking>>> getRecentBookings({int limit = 10}) async {
+    return await _firestoreService.getBookings(
+      limit: limit,
+      orderBy: 'createdAt',
+      descending: true,
+    );
+  }
+
+  @override
+  Future<Result<List<Booking>>> getAllBookings() async {
+    return await _firestoreService.getBookings();
+  }
 }

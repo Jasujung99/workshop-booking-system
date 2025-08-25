@@ -4,11 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 
-import 'package:untitled/presentation/screens/booking/booking_list_screen.dart';
-import 'package:untitled/presentation/providers/booking_provider.dart';
-import 'package:untitled/presentation/providers/auth_provider.dart';
-import 'package:untitled/domain/entities/booking.dart';
-import 'package:untitled/domain/entities/user.dart';
+import 'package:workshop_booking_system/presentation/screens/booking/booking_list_screen.dart';
+import 'package:workshop_booking_system/presentation/providers/booking_provider.dart';
+import 'package:workshop_booking_system/presentation/providers/auth_provider.dart';
+import 'package:workshop_booking_system/domain/entities/booking.dart';
+import 'package:workshop_booking_system/domain/entities/user.dart';
 
 import 'booking_list_screen_test.mocks.dart';
 

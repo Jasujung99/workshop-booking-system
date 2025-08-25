@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../../core/services/accessibility_service.dart';
 
 enum AppButtonType {
   primary,
@@ -17,6 +18,9 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
   final double? width;
   final double? height;
+  final String? semanticLabel;
+  final String? tooltip;
+  final bool autofocus;
 
   const AppButton({
     required this.text,
@@ -27,12 +31,40 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.width,
     this.height,
+    this.semanticLabel,
+    this.tooltip,
+    this.autofocus = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final accessibilityService = AccessibilityService.instance;
+    
+    // Create semantic label for accessibility
+    final buttonSemanticLabel = semanticLabel ?? 
+        accessibilityService.createButtonSemanticLabel(
+          action: text,
+          isEnabled: onPressed != null && !isLoading,
+        );
+    
     Widget button = _buildButton(context);
+    
+    // Add accessibility enhancements
+    button = Semantics(
+      label: buttonSemanticLabel,
+      button: true,
+      enabled: onPressed != null && !isLoading,
+      child: button,
+    );
+    
+    // Add tooltip if provided
+    if (tooltip != null) {
+      button = Tooltip(
+        message: tooltip!,
+        child: button,
+      );
+    }
     
     if (isExpanded) {
       button = SizedBox(
@@ -57,21 +89,25 @@ class AppButton extends StatelessWidget {
       case AppButtonType.primary:
         return FilledButton(
           onPressed: isLoading ? null : onPressed,
+          autofocus: autofocus,
           child: content,
         );
       case AppButtonType.secondary:
         return FilledButton.tonal(
           onPressed: isLoading ? null : onPressed,
+          autofocus: autofocus,
           child: content,
         );
       case AppButtonType.outlined:
         return OutlinedButton(
           onPressed: isLoading ? null : onPressed,
+          autofocus: autofocus,
           child: content,
         );
       case AppButtonType.text:
         return TextButton(
           onPressed: isLoading ? null : onPressed,
+          autofocus: autofocus,
           child: content,
         );
     }

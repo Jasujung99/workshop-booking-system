@@ -25,4 +25,10 @@ abstract class AuthRepository {
   
   /// Delete user account
   Future<Result<void>> deleteAccount();
+  
+  /// Get all users (admin only)
+  Future<Result<List<User>>> getAllUsers();
+  
+  /// Update user role (admin only)
+  Future<Result<User>> updateUserRole(String userId, UserRole role);
 }

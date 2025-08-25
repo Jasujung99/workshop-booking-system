@@ -291,6 +291,9 @@ class FirestoreService {
     BookingType? type,
     DateTime? startDate,
     DateTime? endDate,
+    int? limit,
+    String? orderBy,
+    bool descending = true,
   }) async {
     try {
       Query query = _firestore.collection(AppConstants.bookingsCollection);
@@ -323,7 +326,14 @@ class FirestoreService {
         query = query.where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
       }
 
-      query = query.orderBy('createdAt', descending: true);
+      // Apply ordering
+      final orderField = orderBy ?? 'createdAt';
+      query = query.orderBy(orderField, descending: descending);
+
+      // Apply limit
+      if (limit != null) {
+        query = query.limit(limit);
+      }
 
       final querySnapshot = await query.get();
       final bookings = querySnapshot.docs.map((doc) {

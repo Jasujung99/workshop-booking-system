@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/workshop.dart';
@@ -6,6 +7,7 @@ import '../../domain/usecases/workshop/get_workshops_use_case.dart';
 import '../../domain/usecases/workshop/create_workshop_use_case.dart';
 import '../../domain/usecases/workshop/update_workshop_use_case.dart';
 import '../../domain/repositories/workshop_repository.dart';
+import '../../data/services/firebase_storage_service.dart';
 import '../../core/error/result.dart';
 import '../../core/error/exceptions.dart';
 
@@ -18,6 +20,7 @@ class WorkshopProvider extends ChangeNotifier {
   final CreateWorkshopUseCase _createWorkshopUseCase;
   final UpdateWorkshopUseCase _updateWorkshopUseCase;
   final WorkshopRepository _workshopRepository;
+  final FirebaseStorageService _storageService;
 
   // State variables
   List<Workshop> _workshops = [];
@@ -38,10 +41,12 @@ class WorkshopProvider extends ChangeNotifier {
     required CreateWorkshopUseCase createWorkshopUseCase,
     required UpdateWorkshopUseCase updateWorkshopUseCase,
     required WorkshopRepository workshopRepository,
+    required FirebaseStorageService storageService,
   })  : _getWorkshopsUseCase = getWorkshopsUseCase,
         _createWorkshopUseCase = createWorkshopUseCase,
         _updateWorkshopUseCase = updateWorkshopUseCase,
-        _workshopRepository = workshopRepository;
+        _workshopRepository = workshopRepository,
+        _storageService = storageService;
 
   // Getters
   List<Workshop> get workshops => _filteredWorkshops;
@@ -138,6 +143,13 @@ class WorkshopProvider extends ChangeNotifier {
     await loadWorkshops(refresh: true);
   }
 
+  /// Clear search
+  void clearSearch() {
+    _searchQuery = null;
+    _currentFilter = _currentFilter.copyWith(searchQuery: null);
+    _applyCurrentFilter();
+  }
+
   /// Apply current filter to workshop list
   void _applyCurrentFilter() {
     _filteredWorkshops = _workshops.where((workshop) {
@@ -202,12 +214,35 @@ class WorkshopProvider extends ChangeNotifier {
   }
 
   /// Create new workshop (Admin only)
-  Future<bool> createWorkshop(Workshop workshop) async {
+  Future<bool> createWorkshop(Workshop workshop, {File? imageFile}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      final result = await _createWorkshopUseCase.execute(workshop);
+      Workshop workshopToCreate = workshop;
+      
+      // Upload image if provided
+      if (imageFile != null) {
+        final imageResult = await _storageService.uploadWorkshopImage(
+          imageFile,
+          'workshop_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        final imageUrl = await imageResult.fold(
+          onSuccess: (url) async => url,
+          onFailure: (exception) async {
+            _setError('이미지 업로드에 실패했습니다: ${_getErrorMessage(exception)}');
+            _setLoading(false);
+            return null;
+          },
+        );
+        
+        if (imageUrl == null) return false;
+        
+        workshopToCreate = workshop.copyWith(imageUrl: imageUrl);
+      }
+      
+      final result = await _createWorkshopUseCase.execute(workshopToCreate);
       
       return result.fold(
         onSuccess: (createdWorkshop) {
@@ -230,12 +265,40 @@ class WorkshopProvider extends ChangeNotifier {
   }
 
   /// Update existing workshop (Admin only)
-  Future<bool> updateWorkshop(Workshop workshop) async {
+  Future<bool> updateWorkshop(Workshop workshop, {File? imageFile}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      final result = await _updateWorkshopUseCase.execute(workshop);
+      Workshop workshopToUpdate = workshop;
+      
+      // Upload new image if provided
+      if (imageFile != null) {
+        final imageResult = await _storageService.uploadWorkshopImage(
+          imageFile,
+          'workshop_${workshop.id}_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        final imageUrl = await imageResult.fold(
+          onSuccess: (url) async => url,
+          onFailure: (exception) async {
+            _setError('이미지 업로드에 실패했습니다: ${_getErrorMessage(exception)}');
+            _setLoading(false);
+            return null;
+          },
+        );
+        
+        if (imageUrl == null) return false;
+        
+        // Delete old image if it exists
+        if (workshop.imageUrl != null) {
+          await _storageService.deleteWorkshopImage(workshop.imageUrl!);
+        }
+        
+        workshopToUpdate = workshop.copyWith(imageUrl: imageUrl);
+      }
+      
+      final result = await _updateWorkshopUseCase.execute(workshopToUpdate);
       
       return result.fold(
         onSuccess: (updatedWorkshop) {
